@@ -234,8 +234,7 @@ if frame_skip % 15 == 0:
     placeholder_video.image(
         frame_rgb,
         channels="RGB",
-        use_container_width=True
-    )
+        use_container_width=True 
         )
 
         # Mostrar contador
