@@ -86,7 +86,7 @@ if video_file is not None:
         # Reduzir processamento
         frame_skip += 1
 
-        if frame_skip % 3 != 0:
+        if frame_skip % 5 != 0:
             continue
 
         # Converter para RGB
@@ -230,11 +230,12 @@ if video_file is not None:
             frame,
             cv2.COLOR_BGR2RGB
         )
-
-        placeholder_video.image(
-            frame_rgb,
-            channels="RGB",
-            use_container_width=True
+if frame_skip % 15 == 0:
+    placeholder_video.image(
+        frame_rgb,
+        channels="RGB",
+        use_container_width=True
+    )
         )
 
         # Mostrar contador
