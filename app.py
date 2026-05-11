@@ -6,13 +6,16 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-st.set_page_config(page_title="Dashboard de Treino IA", layout="wide")
+st.set_page_config(
+    page_title="Dashboard IA",
+    layout="wide"
+)
 
 st.title("Meu Dashboard de Treino com I.A. 🦾")
 
 st.write(
-    "Este dashboard utiliza MediaPipe para analisar movimentos "
-    "durante exercícios físicos."
+    "Sistema de análise corporal com MediaPipe "
+    "e visão computacional."
 )
 
 col1, col2 = st.columns([3, 1])
@@ -22,7 +25,7 @@ with col1:
     placeholder_video = st.empty()
 
 with col2:
-    st.header("Contador de Repetições")
+    st.header("Contador")
     placeholder_contador = st.empty()
 
 video_file = st.sidebar.file_uploader(
@@ -32,21 +35,31 @@ video_file = st.sidebar.file_uploader(
 
 exercicio = st.sidebar.selectbox(
     "Selecione o exercício",
-    ["Rosca Direta", "Agachamento", "Flexão de Braço"]
+    [
+        "Rosca Direta",
+        "Agachamento",
+        "Flexão de Braço"
+    ]
 )
 
 if video_file is not None:
 
-    # Salvar vídeo temporário
-    tfile = tempfile.NamedTemporaryFile(delete=False)
+    # =========================
+    # SALVAR VÍDEO
+    # =========================
+    tfile = tempfile.NamedTemporaryFile(
+        delete=False
+    )
+
     tfile.write(video_file.read())
 
     video_path = tfile.name
 
-    # Modelo do MediaPipe
+    # =========================
+    # MEDIAPIPE
+    # =========================
     MODEL_PATH = "pose_landmarker_full.task"
 
-    # Configurar MediaPipe
     BaseOptions = python.BaseOptions
     PoseLandmarker = vision.PoseLandmarker
     PoseLandmarkerOptions = vision.PoseLandmarkerOptions
@@ -66,10 +79,11 @@ if video_file is not None:
         options
     )
 
-    # Abrir vídeo
+    # =========================
+    # VÍDEO
+    # =========================
     cap = cv2.VideoCapture(video_path)
 
-    # Melhorar estabilidade
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
     contador = 0
@@ -83,19 +97,20 @@ if video_file is not None:
         if not ret:
             break
 
-        # Reduzir processamento
         frame_skip += 1
 
+        # Reduz lag
         if frame_skip % 5 != 0:
             continue
 
-        # Converter para RGB
+        # =========================
+        # RGB
+        # =========================
         rgb_frame = cv2.cvtColor(
             frame,
             cv2.COLOR_BGR2RGB
         )
 
-        # Criar imagem MediaPipe
         mp_frame = mp.Image(
             image_format=mp.ImageFormat.SRGB,
             data=rgb_frame
@@ -105,7 +120,9 @@ if video_file is not None:
             cap.get(cv2.CAP_PROP_POS_MSEC)
         )
 
-        # Detectar pose
+        # =========================
+        # DETECÇÃO
+        # =========================
         results = pose_landmarker.detect_for_video(
             mp_frame,
             timestamp
@@ -117,9 +134,27 @@ if video_file is not None:
 
             h, w, _ = frame.shape
 
-            # ===================================
+            # =========================
+            # DESENHAR PONTOS
+            # =========================
+            for pose_landmarks in results.pose_landmarks:
+
+                for landmark in pose_landmarks:
+
+                    x = int(landmark.x * w)
+                    y = int(landmark.y * h)
+
+                    cv2.circle(
+                        frame,
+                        (x, y),
+                        5,
+                        (0, 255, 0),
+                        -1
+                    )
+
+            # =========================
             # ROSCA DIRETA
-            # ===================================
+            # =========================
             if exercicio == "Rosca Direta":
 
                 shoulder = pontos_corpo[11]
@@ -138,7 +173,9 @@ if video_file is not None:
                     x1 - x2
                 )
 
-                angulo = np.abs(angulo * 180 / np.pi)
+                angulo = np.abs(
+                    angulo * 180 / np.pi
+                )
 
                 if angulo > 180:
                     angulo = 360 - angulo
@@ -150,9 +187,9 @@ if video_file is not None:
                     estagio = "cima"
                     contador += 1
 
-            # ===================================
+            # =========================
             # AGACHAMENTO
-            # ===================================
+            # =========================
             elif exercicio == "Agachamento":
 
                 hip = pontos_corpo[23]
@@ -171,7 +208,9 @@ if video_file is not None:
                     x1 - x2
                 )
 
-                angulo = np.abs(angulo * 180 / np.pi)
+                angulo = np.abs(
+                    angulo * 180 / np.pi
+                )
 
                 if angulo > 180:
                     angulo = 360 - angulo
@@ -183,70 +222,9 @@ if video_file is not None:
                     estagio = "baixo"
                     contador += 1
 
-            # ===================================
+            # =========================
             # FLEXÃO
-            # ===================================
+            # =========================
             elif exercicio == "Flexão de Braço":
 
                 shoulder = pontos_corpo[11]
-                elbow = pontos_corpo[13]
-                wrist = pontos_corpo[15]
-
-                x1, y1 = int(shoulder.x * w), int(shoulder.y * h)
-                x2, y2 = int(elbow.x * w), int(elbow.y * h)
-                x3, y3 = int(wrist.x * w), int(wrist.y * h)
-
-                angulo = np.arctan2(
-                    y3 - y2,
-                    x3 - x2
-                ) - np.arctan2(
-                    y1 - y2,
-                    x1 - x2
-                )
-
-                angulo = np.abs(angulo * 180 / np.pi)
-
-                if angulo > 180:
-                    angulo = 360 - angulo
-
-                if angulo > 110:
-                    estagio = "baixo"
-
-                if angulo < 40 and estagio == "baixo":
-                    estagio = "cima"
-                    contador += 1
-
-            # Desenhar pose
-            for pose_landmarks in results.pose_landmarks:
-
-                mp.solutions.drawing_utils.draw_landmarks(
-                    frame,
-                    pose_landmarks,
-                    mp.solutions.pose.POSE_CONNECTIONS
-                )
-
-        # Mostrar vídeo
-        frame_rgb = cv2.cvtColor(
-            frame,
-            cv2.COLOR_BGR2RGB
-        )
-
-        if frame_skip % 15 == 0:
-            placeholder_video.image(
-                frame_rgb,
-                channels="RGB",
-                use_container_width=True
-            )
-
-        # Mostrar contador
-        placeholder_contador.metric(
-            "Repetições",
-            contador
-        )
-
-    cap.release()
-
-else:
-    st.info(
-        "👆 Faça upload de um vídeo para começar!"
-    )
