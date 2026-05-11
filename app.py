@@ -230,12 +230,13 @@ if video_file is not None:
             frame,
             cv2.COLOR_BGR2RGB
         )
-if frame_skip % 15 == 0:
-    placeholder_video.image(
-        frame_rgb,
-        channels="RGB",
-        use_container_width=True 
-        )
+
+        if frame_skip % 15 == 0:
+            placeholder_video.image(
+                frame_rgb,
+                channels="RGB",
+                use_container_width=True
+            )
 
         # Mostrar contador
         placeholder_contador.metric(
