@@ -228,3 +228,32 @@ if video_file is not None:
             elif exercicio == "Flexão de Braço":
 
                 shoulder = pontos_corpo[11]
+                
+            if video_file is not None:
+    # Correção do Tempfile: use suffix para garantir que o OpenCV entenda a extensão
+                tfile = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+                tfile.write(video_file.read())
+                tfile.close() # FECHE antes de abrir com o CV2
+
+                    video_path = tfile.name
+                    cap = cv2.VideoCapture(video_path)
+
+    # ... (configuração do mediapipe igual)
+
+                        while cap.isOpened():
+                          ret, frame = cap.read()
+                            if not ret:
+                                  break
+
+        # [Seu processamento de mediapipe e lógica de ângulos aqui...]
+
+        # === A PARTE QUE FALTA: EXIBIR NO STREAMLIT ===
+        
+        # 1. Converte o frame desenhado para RGB
+                            frame_visual = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        # 2. Atualiza os placeholders que você criou no início do script
+                        placeholder_video.image(frame_visual, channels="RGB")
+                         placeholder_contador.subheader(f"{contador}")
+
+cap.release()
