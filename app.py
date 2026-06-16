@@ -27,7 +27,7 @@ with col1:
 
 with col2:
     st.header("Contador")
-    
+    placeholder_contador = st.empty()
 
 video_file = st.sidebar.file_uploader(
     "Carregue um vídeo",
